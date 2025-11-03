@@ -32,7 +32,7 @@ def run_bake(m_model: str):
         '--minisize'
     ])
 
-    g_bake_count += 1
+    g_bake_count += 2
     print('Complete baking map with %s' % (m_model))
 
 def run_bake_all():
