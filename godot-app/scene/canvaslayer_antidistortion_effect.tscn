@@ -1,0 +1,159 @@
+[gd_scene load_steps=6 format=3 uid="uid://d22r8pmyrvbi7"]
+
+[ext_resource type="Material" uid="uid://dtmprmhrparbn" path="res://material/effect_mask/shader_material_effect_mask_mono_minisize.tres" id="1_8lrao"]
+[ext_resource type="Material" path="res://material/effect_mask/shader_material_effect_mask_minisize.tres" id="1_jnp62"]
+[ext_resource type="Material" uid="uid://b2yioflg8d7ni" path="res://material/effect_mask/shader_material_effect_mask_mono_minisize_split.tres" id="2_tv0wt"]
+[ext_resource type="Material" path="res://material/effect_mask/shader_material_effect_mask_minisize_split.tres" id="2_uis3j"]
+
+[sub_resource type="GDScript" id="GDScript_tv0wt"]
+resource_name = "canvaslayer_antidistortion_effect"
+script/source = "extends CanvasLayer
+
+signal color_model_changed(type: BaseType.ColorModelType)
+
+@export_category(\"RGB Texture model\")
+@export var effect_mask_minisize_material: ShaderMaterial
+@export var effect_mask_minisize_split_material: ShaderMaterial
+
+@export_category(\"Mono Texture model\")
+@export var effect_mask_mono_minisize_material: ShaderMaterial
+@export var effect_mask_mono_minisize_split_material: ShaderMaterial
+
+var effect_mask: ColorRect
+
+var current_map_model: BaseType.MapModelType = BaseType.MapModelType.KEEP_CENTER
+var current_color_model: BaseType.ColorModelType = BaseType.ColorModelType.RGB
+var current_split: bool = false
+
+func _ready() -> void:
+	effect_mask = self.get_node_or_null(\"%ColorRectEffectMask\")
+	if effect_mask == null:
+		printerr(\"Get effect mask failed!\")
+		return
+	
+	load_effect_mask_material()
+
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed(\"ui_left\"):
+		print_verbose(\"Left pressed\")
+		switch_map_model(true)
+	elif event.is_action_pressed(\"ui_right\"):
+		print_verbose(\"Right pressed\")
+		switch_map_model(false)
+	elif event.is_action_pressed(\"ui_up\"):
+		print_verbose(\"Up pressed\")
+		switch_color_model(true)
+		color_model_changed.emit(current_color_model)
+	elif event.is_action_pressed(\"ui_down\"):
+		print_verbose(\"Down pressed\")
+		switch_color_model(false)
+		color_model_changed.emit(current_color_model)
+	elif event.is_action_pressed(\"ui_accept\"):
+		print_verbose(\"Accept pressed\")
+		switch_split()
+
+func get_map_texture_path(
+	map_model: BaseType.MapModelType,
+	color_model: BaseType.ColorModelType
+) -> String:
+	match color_model:
+		BaseType.ColorModelType.RGB:
+			match map_model:
+				BaseType.MapModelType.KEEP_CENTER:
+					return \"res://map_texture/map_keep_center_minisize.png\"
+				
+				BaseType.MapModelType.EXPAND_EDGE:
+					return \"res://map_texture/map_expand_edge_minisize.png\"
+		
+		BaseType.ColorModelType.MONO:
+			match map_model:
+				BaseType.MapModelType.KEEP_CENTER:
+					return \"res://map_texture/map_mono_keep_center_minisize.png\"
+				
+				BaseType.MapModelType.EXPAND_EDGE:
+					return \"res://map_texture/map_mono_expand_edge_minisize.png\"
+	
+	return \"\"
+
+func load_map_texture() -> void:
+	var map_texture_path: String = get_map_texture_path(
+		current_map_model,
+		current_color_model
+	)
+	var map_image: Image = load(map_texture_path)
+	if map_image == null:
+		printerr(\"Get map texture failed!\")
+		return
+	
+	var map_texture: ImageTexture = ImageTexture.create_from_image(map_image)
+
+	if effect_mask != null:
+		effect_mask.material.set_shader_parameter(\"Map\", map_texture)
+
+func load_effect_mask_material() -> void:
+	var material: ShaderMaterial = null
+	match current_color_model:
+		BaseType.ColorModelType.RGB:
+			if current_split:
+				material = effect_mask_minisize_split_material
+			else:
+				material = effect_mask_minisize_material
+		
+		BaseType.ColorModelType.MONO:
+			if current_split:
+				material = effect_mask_mono_minisize_split_material
+			else:
+				material = effect_mask_mono_minisize_material
+	
+	if material == null:
+		printerr(\"Get material failed!\")
+		return
+	
+	effect_mask.material = material
+	
+	load_map_texture()
+
+func switch_map_model(previous: bool = false) -> void:
+	var map_model_index = int(current_map_model)
+	if previous:
+		map_model_index += int(BaseType.MapModelType.MAX) - 1
+	else:
+		map_model_index += 1
+	
+	map_model_index %= BaseType.MapModelType.MAX
+	current_map_model = BaseType.MapModelType.values()[map_model_index]
+	load_map_texture()
+
+func switch_color_model(previous: bool = false) -> void:
+	var color_model_index = int(current_color_model)
+	if previous:
+		color_model_index += int(BaseType.ColorModelType.MAX) - 1
+	else:
+		color_model_index += 1
+	
+	color_model_index %= BaseType.ColorModelType.MAX
+	current_color_model = BaseType.ColorModelType.values()[color_model_index]
+	load_effect_mask_material()
+
+func switch_split() -> void:
+	current_split = not current_split
+	
+	load_effect_mask_material()
+"
+
+[node name="CanvaslayerAntidistortionEffect" type="CanvasLayer"]
+layer = 20
+script = SubResource("GDScript_tv0wt")
+effect_mask_minisize_material = ExtResource("1_jnp62")
+effect_mask_minisize_split_material = ExtResource("2_uis3j")
+effect_mask_mono_minisize_material = ExtResource("1_8lrao")
+effect_mask_mono_minisize_split_material = ExtResource("2_tv0wt")
+
+[node name="ColorRectEffectMask" type="ColorRect" parent="."]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)

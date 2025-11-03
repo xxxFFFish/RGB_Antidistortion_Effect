@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://b2yioflg8d7ni"]
+
+[ext_resource type="Shader" uid="uid://32f8g4rw7k5g" path="res://material/effect_mask/shader_effect_mask_mono_minisize_split.gdshader" id="1_adyf3"]
+
+[resource]
+shader = ExtResource("1_adyf3")
+shader_parameter/ScreenResolution = Vector2i(1920, 1080)
+shader_parameter/MapShift = 420

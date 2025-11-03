@@ -1,0 +1,15 @@
+[gd_scene load_steps=4 format=3 uid="uid://dysrvce2v6inw"]
+
+[ext_resource type="PackedScene" uid="uid://1by8pxu4yaet" path="res://scene/canvaslayer_background.tscn" id="1_v0l8b"]
+[ext_resource type="PackedScene" uid="uid://vb73reo0x7u7" path="res://scene/canvaslayer_ui.tscn" id="2_wp4xf"]
+[ext_resource type="PackedScene" uid="uid://d22r8pmyrvbi7" path="res://scene/canvaslayer_antidistortion_effect.tscn" id="3_wp4xf"]
+
+[node name="Main" type="Node"]
+
+[node name="CanvaslayerBackground" parent="." instance=ExtResource("1_v0l8b")]
+
+[node name="CanvaslayerUi" parent="." instance=ExtResource("2_wp4xf")]
+
+[node name="CanvaslayerAntidistortionEffect" parent="." instance=ExtResource("3_wp4xf")]
+
+[connection signal="color_model_changed" from="CanvaslayerAntidistortionEffect" to="CanvaslayerUi" method="_on_canvaslayer_antidistortion_effect_color_model_changed"]

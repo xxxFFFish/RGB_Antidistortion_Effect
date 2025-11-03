@@ -1,0 +1,180 @@
+[gd_scene load_steps=8 format=3 uid="uid://vb73reo0x7u7"]
+
+[sub_resource type="GDScript" id="GDScript_lbo56"]
+resource_name = "canvaslayer_ui"
+script/source = "extends CanvasLayer
+
+var list_label_fps: Array[Label] = []
+var label_dialog: Label
+var timer_show: Timer
+
+func _ready() -> void:
+	var child = self.get_node_or_null(\"%LabelFPS8\")
+	if child != null and child is Label:
+		list_label_fps.append(child)
+	
+	child = self.get_node_or_null(\"%LabelFPS12\")
+	if child != null and child is Label:
+		list_label_fps.append(child)
+	
+	child = self.get_node_or_null(\"%LabelFPS16\")
+	if child != null and child is Label:
+		list_label_fps.append(child)
+	
+	child = self.get_node_or_null(\"%LabelFPS20\")
+	if child != null and child is Label:
+		list_label_fps.append(child)
+	
+	label_dialog = self.get_node_or_null(\"%LabelDialog\")
+	if label_dialog == null:
+		printerr(\"Get label dialog failed!\")
+	
+	timer_show = self.get_node_or_null(\"%TimerShow\")
+	if timer_show == null:
+		printerr(\"Get timer show failed!\")
+
+func _process(_delta) -> void:
+	var fps = Engine.get_frames_per_second()
+	var fps_str = String.num(fps, 2)
+	for label in list_label_fps:
+		label.text = fps_str
+
+func _on_canvaslayer_antidistortion_effect_color_model_changed(type: BaseType.ColorModelType) -> void:
+	print_verbose(\"On color model changed\")
+	
+	if label_dialog != null:
+		match type:
+			BaseType.ColorModelType.RGB:
+				label_dialog.text = \"RGB Type\"
+			
+			BaseType.ColorModelType.MONO:
+				label_dialog.text = \"Mono Type\"
+		
+		label_dialog.show()
+		if timer_show != null:
+			timer_show.start()
+
+func _on_timer_show_timeout() -> void:
+	print_verbose(\"On show timeout\")
+	
+	label_dialog.hide()
+"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lbo56"]
+bg_color = Color(0, 0, 0, 0)
+
+[sub_resource type="LabelSettings" id="LabelSettings_7rkuw"]
+font_size = 8
+outline_size = 4
+outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_ou0ka"]
+font_size = 12
+outline_size = 6
+outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_sblfq"]
+outline_size = 8
+outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_lbo56"]
+font_size = 20
+outline_size = 10
+outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_hwpy0"]
+font_size = 24
+outline_size = 12
+outline_color = Color(0, 0, 0, 1)
+
+[node name="CanvaslayerUi" type="CanvasLayer"]
+layer = 10
+script = SubResource("GDScript_lbo56")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="CenterContainer" type="CenterContainer" parent="MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="GridContainer" type="GridContainer" parent="MarginContainer/CenterContainer"]
+layout_mode = 2
+columns = 2
+
+[node name="PanelContainerFPS8" type="PanelContainer" parent="MarginContainer/CenterContainer/GridContainer"]
+custom_minimum_size = Vector2(60, 32)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_lbo56")
+
+[node name="LabelFPS8" type="Label" parent="MarginContainer/CenterContainer/GridContainer/PanelContainerFPS8" groups=["label_fps"]]
+unique_name_in_owner = true
+layout_mode = 2
+text = "00.00"
+label_settings = SubResource("LabelSettings_7rkuw")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PanelContainerFPS12" type="PanelContainer" parent="MarginContainer/CenterContainer/GridContainer"]
+custom_minimum_size = Vector2(60, 32)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_lbo56")
+
+[node name="LabelFPS12" type="Label" parent="MarginContainer/CenterContainer/GridContainer/PanelContainerFPS12" groups=["label_fps"]]
+unique_name_in_owner = true
+layout_mode = 2
+text = "00.00"
+label_settings = SubResource("LabelSettings_ou0ka")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PanelContainerFPS16" type="PanelContainer" parent="MarginContainer/CenterContainer/GridContainer"]
+custom_minimum_size = Vector2(60, 32)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_lbo56")
+
+[node name="LabelFPS16" type="Label" parent="MarginContainer/CenterContainer/GridContainer/PanelContainerFPS16" groups=["label_fps"]]
+unique_name_in_owner = true
+layout_mode = 2
+text = "00.00"
+label_settings = SubResource("LabelSettings_sblfq")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PanelContainerFPS20" type="PanelContainer" parent="MarginContainer/CenterContainer/GridContainer"]
+custom_minimum_size = Vector2(60, 32)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_lbo56")
+
+[node name="LabelFPS20" type="Label" parent="MarginContainer/CenterContainer/GridContainer/PanelContainerFPS20" groups=["label_fps"]]
+unique_name_in_owner = true
+layout_mode = 2
+text = "00.00"
+label_settings = SubResource("LabelSettings_lbo56")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LabelDialog" type="Label" parent="MarginContainer"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+text = "Log"
+label_settings = SubResource("LabelSettings_hwpy0")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TimerShow" type="Timer" parent="."]
+unique_name_in_owner = true
+one_shot = true
+
+[connection signal="timeout" from="TimerShow" to="." method="_on_timer_show_timeout"]

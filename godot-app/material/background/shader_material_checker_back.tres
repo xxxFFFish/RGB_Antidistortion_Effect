@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://dj0ht8ehv7wdd"]
+
+[ext_resource type="Shader" uid="uid://cxdmaqd0h5jd0" path="res://material/background/shader_checker_back.gdshader" id="1_7svq8"]
+
+[resource]
+shader = ExtResource("1_7svq8")
+shader_parameter/ForeColor = Color(1, 1, 1, 1)
+shader_parameter/BackColor = Color(0, 0, 0, 1)
+shader_parameter/VerticalBlock = 9.0
+shader_parameter/HorizontallBlock = 16.0

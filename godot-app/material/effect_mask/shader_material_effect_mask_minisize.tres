@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://do6a8cic6t5e4"]
+
+[ext_resource type="Shader" uid="uid://cucy0yxdhjoe2" path="res://material/effect_mask/shader_effect_mask_minisize.gdshader" id="1_wgit6"]
+
+[resource]
+shader = ExtResource("1_wgit6")
+shader_parameter/ScreenResolution = Vector2i(1920, 1080)
+shader_parameter/MapShift = 420

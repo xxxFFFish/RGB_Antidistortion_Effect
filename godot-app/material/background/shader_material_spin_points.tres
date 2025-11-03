@@ -1,0 +1,24 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://bvw6jsrvatsfy"]
+
+[ext_resource type="Shader" uid="uid://c5w4o78y5375h" path="res://material/background/shader_spin_points.gdshader" id="1_qmnf0"]
+
+[resource]
+shader = ExtResource("1_qmnf0")
+shader_parameter/CenterOffset = Vector2(0, 0)
+shader_parameter/UVScale = Vector2(1.778, 1)
+shader_parameter/RadiusDensity = 256.0
+shader_parameter/AngularDensity = 2.0
+shader_parameter/AngularDensityGrowth = 0.1
+shader_parameter/MinAngularVelocityRatio = 0.5
+shader_parameter/MaxAngularVelocity = 0.1
+shader_parameter/MinTrailRangeRatio = 0.5
+shader_parameter/MaxTrailRange = 0.2
+shader_parameter/HeadRange = 0.01
+shader_parameter/EdgeRange = 0.0
+shader_parameter/AntiAliasRange = 0.2
+shader_parameter/MinShowHideFrequenceRatio = 0.3
+shader_parameter/MaxShowHideFrequence = 0.2
+shader_parameter/ShowDuty = 0.6
+shader_parameter/HideDuty = 0.2
+shader_parameter/CenterMask = 36.0
+shader_parameter/PointColor = Color(0, 1, 1, 1)
