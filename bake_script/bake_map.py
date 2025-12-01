@@ -150,6 +150,47 @@ def get_tan_factor_based_on_expanding_forward(coeffs: np.ndarray):
 
     return tan_factor_base, edge_r, growth
 
+def balance_tan_factors():
+    global g_tan_factors_base
+    global g_tan_factors_edge
+    global g_tan_factors_growth
+
+    match g_args.map_model:
+        case 'expand_edge':
+            max_value = g_tan_factors_base.max()
+            g_tan_factors_base[0] = max_value
+            g_tan_factors_base[1] = max_value
+            g_tan_factors_base[2] = max_value
+
+        case 'transition':
+            max_index = g_tan_factors_edge.argmax()
+            max_value = g_tan_factors_edge[max_index]
+            g_tan_factors_edge[0] = max_value
+            g_tan_factors_edge[1] = max_value
+            g_tan_factors_edge[2] = max_value
+
+            max_value = g_tan_factors_growth[max_index]
+            g_tan_factors_growth[0] = max_value
+            g_tan_factors_growth[1] = max_value
+            g_tan_factors_growth[2] = max_value
+
+        case 'expand_forward':
+            max_index = g_tan_factors_base.argmax()
+            max_value = g_tan_factors_base[max_index]
+            g_tan_factors_base[0] = max_value
+            g_tan_factors_base[1] = max_value
+            g_tan_factors_base[2] = max_value
+
+            max_value = g_tan_factors_edge[max_index]
+            g_tan_factors_edge[0] = max_value
+            g_tan_factors_edge[1] = max_value
+            g_tan_factors_edge[2] = max_value
+
+            max_value = g_tan_factors_growth[max_index]
+            g_tan_factors_growth[0] = max_value
+            g_tan_factors_growth[1] = max_value
+            g_tan_factors_growth[2] = max_value
+
 def set_tan_factors(coeffs: np.ndarray):
     global g_tan_factors_base
     global g_tan_factors_edge
@@ -157,9 +198,9 @@ def set_tan_factors(coeffs: np.ndarray):
 
     match g_args.map_model:
         case 'keep_center':
-            g_tan_factors_base[0] = get_tan_factor_based_on_keeping_center(coeffs[:, 0])
-            g_tan_factors_base[1] = get_tan_factor_based_on_keeping_center(coeffs[:, 1])
-            g_tan_factors_base[2] = get_tan_factor_based_on_keeping_center(coeffs[:, 2])
+            g_tan_factors_base[0] = get_tan_factor_based_on_keeping_center(coeffs[:, 1])
+            g_tan_factors_base[1] = g_tan_factors_base[0]
+            g_tan_factors_base[2] = g_tan_factors_base[0]
 
         case 'expand_edge':
             g_tan_factors_base[0] = get_tan_factor_based_on_expanding_edge(coeffs[:, 0])
@@ -178,6 +219,8 @@ def set_tan_factors(coeffs: np.ndarray):
 
         case _:
             g_tan_factors_base = np.array([0.1, 0.1, 0.1])
+
+    balance_tan_factors()
 
 def get_tan_factor(r: float, i: int):
     match g_args.map_model:
