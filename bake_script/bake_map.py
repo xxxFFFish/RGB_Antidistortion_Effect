@@ -22,9 +22,9 @@ g_args = None
 g_center_shift_x = 0.0
 g_center_shift_y = 0.0
 
-g_tan_factors_base = np.array([0.1, 0.1, 0.1])
-g_tan_factors_edge = np.array([0.0, 0.0, 0.0])
-g_tan_factors_growth = np.array([0.0, 0.0, 0.0])
+g_tan_factors_base = 0.1
+g_tan_factors_edge = 0.0
+g_tan_factors_growth = 0.0
 
 
 def parse_argument():
@@ -40,6 +40,7 @@ def parse_argument():
     group = parser.add_argument_group('map texture parameters')
     group.add_argument('-M', '--map-model', metavar='', type=str, choices=('keep_center', 'expand_edge', 'transition', 'expand_forward'), default='keep_center', help='map model [keep_center(default), expand_edge, transition, expand_forward]')
     group.add_argument('--minisize', action='store_true', help='is minisize?')
+    group.add_argument('--mono', action='store_true', help='is mono map?')
 
     group = parser.add_argument_group('other parameters')
     group.add_argument('--expand-limited-ratio', metavar='', type=float, default=0.9, help='limit expand ratio in expand forward map model [default: 0.9]')
@@ -150,47 +151,6 @@ def get_tan_factor_based_on_expanding_forward(coeffs: np.ndarray):
 
     return tan_factor_base, edge_r, growth
 
-def balance_tan_factors():
-    global g_tan_factors_base
-    global g_tan_factors_edge
-    global g_tan_factors_growth
-
-    match g_args.map_model:
-        case 'expand_edge':
-            max_value = g_tan_factors_base.max()
-            g_tan_factors_base[0] = max_value
-            g_tan_factors_base[1] = max_value
-            g_tan_factors_base[2] = max_value
-
-        case 'transition':
-            max_index = g_tan_factors_edge.argmax()
-            max_value = g_tan_factors_edge[max_index]
-            g_tan_factors_edge[0] = max_value
-            g_tan_factors_edge[1] = max_value
-            g_tan_factors_edge[2] = max_value
-
-            max_value = g_tan_factors_growth[max_index]
-            g_tan_factors_growth[0] = max_value
-            g_tan_factors_growth[1] = max_value
-            g_tan_factors_growth[2] = max_value
-
-        case 'expand_forward':
-            max_index = g_tan_factors_base.argmax()
-            max_value = g_tan_factors_base[max_index]
-            g_tan_factors_base[0] = max_value
-            g_tan_factors_base[1] = max_value
-            g_tan_factors_base[2] = max_value
-
-            max_value = g_tan_factors_edge[max_index]
-            g_tan_factors_edge[0] = max_value
-            g_tan_factors_edge[1] = max_value
-            g_tan_factors_edge[2] = max_value
-
-            max_value = g_tan_factors_growth[max_index]
-            g_tan_factors_growth[0] = max_value
-            g_tan_factors_growth[1] = max_value
-            g_tan_factors_growth[2] = max_value
-
 def set_tan_factors(coeffs: np.ndarray):
     global g_tan_factors_base
     global g_tan_factors_edge
@@ -198,46 +158,81 @@ def set_tan_factors(coeffs: np.ndarray):
 
     match g_args.map_model:
         case 'keep_center':
-            g_tan_factors_base[0] = get_tan_factor_based_on_keeping_center(coeffs[:, 1])
-            g_tan_factors_base[1] = g_tan_factors_base[0]
-            g_tan_factors_base[2] = g_tan_factors_base[0]
+            g_tan_factors_base = get_tan_factor_based_on_keeping_center(coeffs[:, 1])
 
         case 'expand_edge':
-            g_tan_factors_base[0] = get_tan_factor_based_on_expanding_edge(coeffs[:, 0])
-            g_tan_factors_base[1] = get_tan_factor_based_on_expanding_edge(coeffs[:, 1])
-            g_tan_factors_base[2] = get_tan_factor_based_on_expanding_edge(coeffs[:, 2])
+            if g_args.mono:
+                g_tan_factors_base = get_tan_factor_based_on_expanding_edge(coeffs[:, 1])
+            else:
+                tan_factors = np.array([
+                    get_tan_factor_based_on_expanding_edge(coeffs[:, 0]),
+                    get_tan_factor_based_on_expanding_edge(coeffs[:, 1]),
+                    get_tan_factor_based_on_expanding_edge(coeffs[:, 2]),
+                ])
+
+                g_tan_factors_base = tan_factors.max()
 
         case 'transition':
-            g_tan_factors_base[0], g_tan_factors_edge[0], g_tan_factors_growth[0] = get_tan_factor_based_on_transition(coeffs[:, 0])
-            g_tan_factors_base[1], g_tan_factors_edge[1], g_tan_factors_growth[1] = get_tan_factor_based_on_transition(coeffs[:, 1])
-            g_tan_factors_base[2], g_tan_factors_edge[2], g_tan_factors_growth[2] = get_tan_factor_based_on_transition(coeffs[:, 2])
+            if g_args.mono:
+                g_tan_factors_base, g_tan_factors_edge, g_tan_factors_growth = get_tan_factor_based_on_transition(coeffs[:, 1])
+            else:
+                tan_factors = np.array([
+                    get_tan_factor_based_on_transition(coeffs[:, 0]),
+                    get_tan_factor_based_on_transition(coeffs[:, 1]),
+                    get_tan_factor_based_on_transition(coeffs[:, 2]),
+                ])
+
+                max_index = tan_factors[:, 1].argmax()
+
+                max_value = tan_factors[max_index, 0]
+                g_tan_factors_base = max_value
+
+                max_value = tan_factors[max_index, 1]
+                g_tan_factors_edge = max_value
+
+                max_value = tan_factors[max_index, 2]
+                g_tan_factors_growth = max_value
 
         case 'expand_forward':
-            g_tan_factors_base[0], g_tan_factors_edge[0], g_tan_factors_growth[0] = get_tan_factor_based_on_expanding_forward(coeffs[:, 0])
-            g_tan_factors_base[1], g_tan_factors_edge[1], g_tan_factors_growth[1] = get_tan_factor_based_on_expanding_forward(coeffs[:, 1])
-            g_tan_factors_base[2], g_tan_factors_edge[2], g_tan_factors_growth[2] = get_tan_factor_based_on_expanding_forward(coeffs[:, 2])
+            if g_args.mono:
+                g_tan_factors_base, g_tan_factors_edge, g_tan_factors_growth = get_tan_factor_based_on_expanding_forward(coeffs[:, 1])
+            else:
+                tan_factors = np.array([
+                    get_tan_factor_based_on_expanding_forward(coeffs[:, 0]),
+                    get_tan_factor_based_on_expanding_forward(coeffs[:, 1]),
+                    get_tan_factor_based_on_expanding_forward(coeffs[:, 2]),
+                ])
+
+                max_index = tan_factors[:, 0].argmax()
+
+                max_value = tan_factors[max_index, 0]
+                g_tan_factors_base = max_value
+
+                max_value = tan_factors[max_index, 1]
+                g_tan_factors_edge = max_value
+
+                max_value = tan_factors[max_index, 2]
+                g_tan_factors_growth = max_value
 
         case _:
             g_tan_factors_base = np.array([0.1, 0.1, 0.1])
 
-    balance_tan_factors()
-
-def get_tan_factor(r: float, i: int):
+def get_tan_factor(r: float):
     match g_args.map_model:
         case 'transition':
-            if r > g_tan_factors_edge[i]:
-                r = g_tan_factors_edge[i]
+            if r > g_tan_factors_edge:
+                r = g_tan_factors_edge
 
-            return g_tan_factors_base[i] + g_tan_factors_growth[i]*r
+            return g_tan_factors_base + g_tan_factors_growth*r
 
         case 'expand_forward':
-            if r < g_tan_factors_edge[i]:
-                return g_tan_factors_base[i]
+            if r < g_tan_factors_edge:
+                return g_tan_factors_base
 
-            return g_tan_factors_base[i] + g_tan_factors_growth[i]*(r - g_tan_factors_edge[i])
+            return g_tan_factors_base + g_tan_factors_growth*(r - g_tan_factors_edge)
 
         case _:
-            return g_tan_factors_base[i]
+            return g_tan_factors_base
 
 def get_antidistortion_map_texture_based_on_minisize(coeffs: np.ndarray):
     # Only need to calculate 1/4 area by symmetry
@@ -250,6 +245,9 @@ def get_antidistortion_map_texture_based_on_minisize(coeffs: np.ndarray):
     filter_refrence = texture_width - texture_height
 
     for i in range(0, 3):
+        if g_args.mono and i != 1:
+            continue
+
         poly = np.poly1d(coeffs[:, i])
         x_offset = i * texture_width
 
@@ -262,7 +260,7 @@ def get_antidistortion_map_texture_based_on_minisize(coeffs: np.ndarray):
                     continue
 
                 r_preset = get_r_from_pixel(x, y)
-                r_map = get_tan_factor(r_preset, i)*poly(r_preset)
+                r_map = get_tan_factor(r_preset)*poly(r_preset)
                 map_bytes = np.float32(r_map / r_preset).view(np.uint32).tobytes()
                 _x = x + x_offset
                 texture[y, _x, 0] = map_bytes[0]
@@ -280,13 +278,16 @@ def get_antidistortion_map_texture_based_on_quarter(coeffs: np.ndarray):
     texture = np.zeros([texture_height, texture_width * 3, 4], dtype = np.uint8, order = 'C')
 
     for i in range(0, 3):
+        if g_args.mono and i != 1:
+            continue
+
         poly = np.poly1d(coeffs[:, i])
         x_offset = i * texture_width
 
         for y in range(0, texture_height):
             for x in range(0, texture_width):
                 r_preset = get_r_from_pixel(x, y)
-                r_map = get_tan_factor(r_preset, i)*poly(r_preset)
+                r_map = get_tan_factor(r_preset)*poly(r_preset)
                 map_bytes = np.float32(r_map / r_preset).view(np.uint32).tobytes()
                 _x = x + x_offset
                 texture[y, _x, 0] = map_bytes[0]
@@ -306,14 +307,14 @@ def save_texture(file_name: str, texture: np.ndarray):
     if not os.path.exists(SAVE_MAP_FOLDER):
         os.makedirs(SAVE_MAP_FOLDER)
 
-    mono_texture_width = g_args.resolution[0] >> 1
-    mono_texture = texture[:, mono_texture_width:mono_texture_width*2]
+    if g_args.mono:
+        file_full_name = file_name + '_mono_' + g_args.map_model
+        texture = texture[:, g_args.resolution[0] >> 1:g_args.resolution[0], :]
+    else:
+        file_full_name = file_name + '_' + g_args.map_model
 
-    file_full_name = file_name + '_' + g_args.map_model
-    mono_file_full_name = file_name + '_mono_' + g_args.map_model
     if g_args.minisize:
         file_full_name += '_minisize'
-        mono_file_full_name += '_minisize'
 
     match g_args.save_format:
         case 'png':
@@ -322,18 +323,9 @@ def save_texture(file_name: str, texture: np.ndarray):
             cv2.imwrite(save_file_name, bgra_texture)
             print('Save %s success' % (save_file_name))
 
-            save_file_name = SAVE_MAP_FOLDER + '/' + mono_file_full_name + '.png'
-            bgra_texture = cv2.cvtColor(mono_texture, cv2.COLOR_RGBA2BGRA) # Default color order in OpenCV is BGR
-            cv2.imwrite(save_file_name, bgra_texture)
-            print('Save %s success' % (save_file_name))
-
         case 'bin':
             save_file_name = SAVE_MAP_FOLDER + '/' + file_full_name + '.bin'
             texture.tofile(save_file_name)
-            print('Save %s success' % (save_file_name))
-
-            save_file_name = SAVE_MAP_FOLDER + '/' + mono_file_full_name + '.bin'
-            mono_texture.tofile(save_file_name)
             print('Save %s success' % (save_file_name))
 
         case _:
@@ -352,6 +344,7 @@ if __name__ == '__main__':
     print('Map resolution: %dx%d' % (g_args.resolution[0], g_args.resolution[1]))
     print('Map model: %s' % (g_args.map_model))
     print('Minisize: %s' % (g_args.minisize))
+    print('Mono: %s' % (g_args.mono))
 
     # Preset parameters
     g_center_shift_x = (g_args.resolution[0] - 1)*0.5
@@ -360,7 +353,8 @@ if __name__ == '__main__':
     polyfit_coeffs = get_polyfit_coeffs()
     if polyfit_coeffs.shape[0] > 1 and polyfit_coeffs.shape[1] == 3:
         set_tan_factors(polyfit_coeffs)
-        print('Map tan factors base: %f/%f/%f' % (g_tan_factors_base[0], g_tan_factors_base[1], g_tan_factors_base[2]))
+
+        print('Map tan factors base: %f' % (g_tan_factors_base))
 
         map_texture = get_antidistortion_map_texture(polyfit_coeffs)
         if map_texture.size > 0:

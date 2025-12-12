@@ -52,7 +52,10 @@ def get_map_texture():
         script_path = BAKE_MAP_SCRIPT_FOLDER + '/' + BAKE_MAP_SCRIPT
 
         # Find none polyfit coeffs file, need to execute fit script.
-        subprocess.run(['python', script_path, '-M', g_args.map_model, '--minisize'])
+        if g_args.mono:
+            subprocess.run(['python', script_path, '-M', g_args.map_model, '--mono', '--minisize'])
+        else:
+            subprocess.run(['python', script_path, '-M', g_args.map_model, '--minisize'])
 
     if os.path.isfile(file_path):
         return cv2.cvtColor(cv2.imread(file_path, cv2.IMREAD_UNCHANGED), cv2.COLOR_BGRA2RGBA)
@@ -180,7 +183,14 @@ def get_map_uv(map_texture: np.ndarray):
 
 def convert_image(map_texture: np.ndarray, image: np.ndarray):
     # These calculation logics are equivalent to those in shader_effect_mask_minisize.gdshader of Godot.
-    image_b, image_g, image_r, image_a = cv2.split(image)
+    if image.shape[2] == 4:
+        image_b, image_g, image_r, image_a = cv2.split(image)
+    elif image.shape[2] == 3:
+        image_b, image_g, image_r = cv2.split(image)
+        image_a = np.full((image.shape[0], image.shape[1]), 255, dtype=np.uint8)
+    else:
+        print("Error image shape")
+        return np.array([])
 
     slice_width = map_texture.shape[1] // 3
 
@@ -263,7 +273,14 @@ def get_split_map_uv(map_texture: np.ndarray):
 
 def convert_split_image(map_texture: np.ndarray, image: np.ndarray):
     # These calculation logics are equivalent to those in shader_effect_mask_minisize.gdshader of Godot.
-    image_b, image_g, image_r, image_a = cv2.split(image)
+    if image.shape[2] == 4:
+        image_b, image_g, image_r, image_a = cv2.split(image)
+    elif image.shape[2] == 3:
+        image_b, image_g, image_r = cv2.split(image)
+        image_a = np.full((image.shape[0], image.shape[1]), 255, dtype=np.uint8)
+    else:
+        print("Error image shape")
+        return np.array([])
 
     slice_width = map_texture.shape[1] // 3
 
