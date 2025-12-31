@@ -31,7 +31,7 @@ def parse_argument():
 
     parser = argparse.ArgumentParser(description='Translate Pattern Image By Antidistortion map texture')
     parser.add_argument('--mono', action='store_true', help='is mono color antidistortion?')
-    parser.add_argument('-M', '--map-model', metavar='', type=str, choices=('keep_center', 'expand_edge', 'transition', 'expand_forward'), default='keep_center', help='map model [keep_center(default), expand_edge, transition, expand_forward]')
+    parser.add_argument('-M', '--map-model', metavar='', type=str, choices=('keep_center', 'expand_edge', 'transition'), default='keep_center', help='map model [keep_center(default), expand_edge, transition]')
     parser.add_argument('-S', '--split', action='store_true', help='is split?')
     parser.add_argument('-F', '--fit-type', metavar='', type=str, choices=('stretch', 'cut'), default='stretch', help='choose fit type when the resolutions of map and image are not the same [stretch(default), cut]')
 
