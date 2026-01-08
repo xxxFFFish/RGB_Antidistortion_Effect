@@ -34,15 +34,22 @@ def parse_argument():
     parser.add_argument('-M', '--map-model', metavar='', type=str, choices=('keep_center', 'expand_edge', 'transition'), default='keep_center', help='map model [keep_center(default), expand_edge, transition]')
     parser.add_argument('-S', '--split', action='store_true', help='is split?')
     parser.add_argument('-F', '--fit-type', metavar='', type=str, choices=('stretch', 'cut'), default='stretch', help='choose fit type when the resolutions of map and image are not the same [stretch(default), cut]')
+    parser.add_argument('--swap-edge', action='store_true', help='swap edge with expand edge mode?')
+    parser.add_argument('-BC', '--border-color', metavar='', type=int, nargs=4, default=(0, 0, 0, 255), help='border color by RGBA [default: 0 0 0 255]')
 
     g_args = parser.parse_args()
 
 def get_map_texture():
     file_name = MAP_TEXTURE_NAME
     if g_args.mono:
-        file_name += '_mono_' + g_args.map_model + '_minisize.png'
-    else:
-        file_name += '_' + g_args.map_model + '_minisize.png'
+        file_name += '_mono'
+
+    file_name += '_' + g_args.map_model
+
+    if (g_args.map_model == 'expand_edge' or g_args.map_model == 'transition') and g_args.swap_edge:
+        file_name += '_swap_edge'
+
+    file_name += '_minisize.png'
 
     file_path = MAP_TEXTURE_FOLDER + '/' + file_name
 
@@ -52,10 +59,14 @@ def get_map_texture():
         script_path = BAKE_MAP_SCRIPT_FOLDER + '/' + BAKE_MAP_SCRIPT
 
         # Find none polyfit coeffs file, need to execute fit script.
+        params = ['python', script_path, '-M', g_args.map_model, '--minisize']
         if g_args.mono:
-            subprocess.run(['python', script_path, '-M', g_args.map_model, '--mono', '--minisize'])
-        else:
-            subprocess.run(['python', script_path, '-M', g_args.map_model, '--minisize'])
+            params.append('--mono')
+
+        if g_args.swap_edge:
+            params.append('--swap-edge')
+
+        subprocess.run(params)
 
     if os.path.isfile(file_path):
         return cv2.cvtColor(cv2.imread(file_path, cv2.IMREAD_UNCHANGED), cv2.COLOR_BGRA2RGBA)
@@ -199,7 +210,7 @@ def convert_image(map_texture: np.ndarray, image: np.ndarray):
     image_r = cv2.remap(
         image_r, map_x, map_y, cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_CONSTANT,
-        borderValue=(0, 0, 0, 255)
+        borderValue=g_args.border_color[0]
     )
 
     # G channel
@@ -207,7 +218,7 @@ def convert_image(map_texture: np.ndarray, image: np.ndarray):
     image_g = cv2.remap(
         image_g, map_x, map_y, cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_CONSTANT,
-        borderValue=(0, 0, 0, 255)
+        borderValue=g_args.border_color[1]
     )
 
     # B channel
@@ -215,19 +226,24 @@ def convert_image(map_texture: np.ndarray, image: np.ndarray):
     image_b = cv2.remap(
         image_b, map_x, map_y, cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_CONSTANT,
-        borderValue=(0, 0, 0, 255)
+        borderValue=g_args.border_color[2]
     )
 
     return cv2.merge([image_b, image_g, image_r, image_a])
 
 def convert_image_with_mono(map_texture: np.ndarray, image: np.ndarray):
+    if image.shape[2] == 4:
+        border_color = (g_args.border_color[2], g_args.border_color[1], g_args.border_color[0], g_args.border_color[3])
+    elif image.shape[2] == 3:
+        border_color = (g_args.border_color[2], g_args.border_color[1], g_args.border_color[0])
+
     # These calculation logics are equivalent to those in shader_effect_mask_minisize.gdshader of Godot.
     map_x, map_y = get_map_uv(map_texture)
 
     return cv2.remap(
         image, map_x, map_y, cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_CONSTANT,
-        borderValue=(0, 0, 0, 255)
+        borderValue=border_color
     )
 
 def get_split_map_uv(map_texture: np.ndarray):
@@ -289,7 +305,7 @@ def convert_split_image(map_texture: np.ndarray, image: np.ndarray):
     image_r = cv2.remap(
         image_r, map_x, map_y, cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_CONSTANT,
-        borderValue=(0, 0, 0, 255)
+        borderValue=g_args.border_color[0]
     )
 
     # G channel
@@ -297,7 +313,7 @@ def convert_split_image(map_texture: np.ndarray, image: np.ndarray):
     image_g = cv2.remap(
         image_g, map_x, map_y, cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_CONSTANT,
-        borderValue=(0, 0, 0, 255)
+        borderValue=g_args.border_color[1]
     )
 
     # B channel
@@ -305,19 +321,24 @@ def convert_split_image(map_texture: np.ndarray, image: np.ndarray):
     image_b = cv2.remap(
         image_b, map_x, map_y, cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_CONSTANT,
-        borderValue=(0, 0, 0, 255)
+        borderValue=g_args.border_color[2]
     )
 
     return cv2.merge([image_b, image_g, image_r, image_a])
 
 def convert_split_image_with_mono(map_texture: np.ndarray, image: np.ndarray):
+    if image.shape[2] == 4:
+        border_color = (g_args.border_color[2], g_args.border_color[1], g_args.border_color[0], g_args.border_color[3])
+    elif image.shape[2] == 3:
+        border_color = (g_args.border_color[2], g_args.border_color[1], g_args.border_color[0])
+
     # These calculation logics are equivalent to those in shader_effect_mask_minisize_split.gdshader of Godot.
     map_x, map_y = get_split_map_uv(map_texture)
 
     return cv2.remap(
         image, map_x, map_y, cv2.INTER_LINEAR,
         borderMode=cv2.BORDER_CONSTANT,
-        borderValue=(0, 0, 0, 255)
+        borderValue=border_color
     )
 
 def save_image(image: np.ndarray, name: str):
@@ -330,6 +351,9 @@ def save_image(image: np.ndarray, name: str):
         file_full_name += '_mono_' + g_args.map_model
     else:
         file_full_name += '_' + g_args.map_model
+    
+    if g_args.swap_edge:
+        file_full_name += '_swap_edge'
 
     if g_args.split:
         file_full_name += '_split'

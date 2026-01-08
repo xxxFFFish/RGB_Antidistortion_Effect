@@ -43,6 +43,7 @@ def parse_argument():
     group.add_argument('--mono', action='store_true', help='is mono map?')
 
     group = parser.add_argument_group('other parameters')
+    group.add_argument('--swap-edge', action='store_true', help='swap edge with expand edge mode?')
     group.add_argument('-TR', '--transition-range', metavar=('START', 'END'), nargs=2, type=float, default=(0.2, 0.5), help='range in transition map model [default: 0.2 0.5]')
 
     g_args = parser.parse_args()
@@ -94,6 +95,9 @@ def get_tan_factor_based_on_expanding_edge(coeffs: np.ndarray):
     # tan_r_edge = r_edge_map / tan_factor
     # expand edge to screen edge: r_edge_map = r_edge
     # tan_factor = r_edge / tan_r_edge
+
+    if g_args.swap_edge:
+        return min(r_edge_x / tan_r_edge_x, r_edge_y / tan_r_edge_y)
 
     return max(r_edge_x / tan_r_edge_x, r_edge_y / tan_r_edge_y)
 
@@ -217,6 +221,9 @@ def save_texture(file_name: str, texture: np.ndarray):
         texture = texture[:, g_args.resolution[0] >> 1:g_args.resolution[0], :]
     else:
         file_full_name = file_name + '_' + g_args.map_model
+
+    if (g_args.map_model == 'expand_edge' or g_args.map_model == 'transition') and g_args.swap_edge:
+        file_full_name += '_swap_edge'
 
     if g_args.minisize:
         file_full_name += '_minisize'
